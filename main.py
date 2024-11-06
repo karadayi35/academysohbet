@@ -63,7 +63,8 @@ source_groups = ['https://t.me/ogedaychat', 'https://t.me/ekremabianalizsohbet']
 target_group = 'https://t.me/rouletteacademyturkey'  # Mesajların gönderileceği grup
 
 # Yasaklı kelimeler listesi
-banned_keywords = ['ekremabi', 'youtube', 'ekrem', 'OgedayPRO', 'ogeday']
+banned_keywords = ['ekremabi', 'youtube', 'ekrem', 'OgedayPRO', 'ogeday','!orisbet', '!fixbet', 
+    '!olaycasino', '!enbet', '!betplay', '!gamobet']
 
 # Telegram istemcilerini başlatmak için async fonksiyonu
 async def start_clients():
