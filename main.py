@@ -3,7 +3,7 @@ from telethon.errors.rpcerrorlist import FloodWaitError
 import asyncio
 import re
 
-# Telegram API bilgileri - https://my.telegram.org/apps üzerinden alınabilir.
+# Telegram API bilgileri
 api_id = '16200120'  # Telegram API ID
 api_hash = '6611d0556f6f8dc7b9190803cc442dec'  # Telegram API Hash
 
@@ -58,13 +58,12 @@ accounts = [
     ('+14642272953 ', 'session_49'),
 ]
 
-# Kaynak gruplar (ogedayprochat ve ekremabianalizsohbet) ve hedef grup (101casinogrubu) chat id'leri
-source_groups = ['https://t.me/ogedaychat', 'https://t.me/ekremabianalizsohbet']  # Mesajların çekileceği gruplar
-target_group = 'https://t.me/rouletteacademyturkey'  # Mesajların gönderileceği grup
+# Kaynak grup ve hedef grup chat id'leri
+source_group = 'https://t.me/BetFury'  # Mesajların çekileceği grup
+target_group = 'https://t.me/rouletteacademycanada'  # Mesajların gönderileceği grup
 
 # Yasaklı kelimeler listesi
-banned_keywords = ['ekremabi', 'youtube', 'ekrem', 'OgedayPRO', 'ogeday','!orisbet', '!fixbet', 
-    '!olaycasino', '!enbet', '!betplay', '!gamobet']
+banned_keywords = ['betfury']
 
 # Telegram istemcilerini başlatmak için async fonksiyonu
 async def start_clients():
@@ -77,15 +76,15 @@ async def start_clients():
 
     return clients
 
-# URL, medya ve yasaklı kelimeler içeren mesajları filtreleyen fonksiyon
+# URL, admin mesajları, bot mesajları ve yasaklı kelimeler içeren mesajları filtreleyen fonksiyon
 def is_valid_message(message):
     # URL içeren mesajları filtrele
     url_pattern = r'(https?://\S+|www\.\S+)'
     if re.search(url_pattern, message.text):
         return False
 
-    # Medya içerikli mesajları (fotoğraf, video vs.) filtrele
-    if message.media:
+    # Bot veya admin mesajlarını filtrele
+    if message.sender.bot or message.is_channel:  # Admin veya bot mesajlarını filtreler
         return False
 
     # Yasaklı kelimeler içeren mesajları filtrele
@@ -95,28 +94,35 @@ def is_valid_message(message):
 
     return True
 
-# Kaynak gruplardan gelen mesajları hedef gruba gönderme fonksiyonu
+# Kaynak gruptan gelen mesajları hedef gruba gönderme fonksiyonu
 async def forward_messages(clients):
     client_index = 0  # Hesap döngüsü için başlangıç indeksi
 
-    for source_group in source_groups:
-        source_client = clients[client_index]
+    source_client = clients[client_index]
 
-        @source_client.on(events.NewMessage(chats=source_group))
-        async def handler(event):
-            nonlocal client_index
-            message = event.message
+    @source_client.on(events.NewMessage(chats=source_group))
+    async def handler(event):
+        nonlocal client_index
+        message = event.message
 
-            # Sadece geçerli mesajları (sohbet mesajları) al
-            if is_valid_message(message):
-                try:
+        # Geçerli mesajları (gif, sticker ve yanıtlı mesajlar dahil) filtrele
+        if is_valid_message(message):
+            try:
+                # Mesaj yanıtlanmışsa, yanıtlanan mesajın içeriğini çek
+                if message.is_reply:
+                    # Yanıtlanan mesajı getir
+                    replied_message = await message.get_reply_message()
+                    # Yanıtlayarak mesajı hedef gruba gönder
+                    await clients[client_index].send_message(target_group, message.text, reply_to=replied_message.id)
+                else:
+                    # Yanıtlanmamışsa direkt olarak hedef gruba gönder
                     await clients[client_index].send_message(target_group, message.text)
-                except FloodWaitError as e:
-                    print(f"Flood hatası: {e.seconds} saniye bekleniyor.")
-                    await asyncio.sleep(e.seconds)  # Hata mesajında belirtilen süre kadar bekle
-                finally:
-                    # Hesabı değiştir ve sıradaki hesaba geç
-                    client_index = (client_index + 1) % len(clients)
+            except FloodWaitError as e:
+                print(f"Flood hatası: {e.seconds} saniye bekleniyor.")
+                await asyncio.sleep(e.seconds)  # Hata mesajında belirtilen süre kadar bekle
+            finally:
+                # Hesabı değiştir ve sıradaki hesaba geç
+                client_index = (client_index + 1) % len(clients)
 
         print(f"{source_group} grubundan mesajlar çekilmeye başlandı...")
 
